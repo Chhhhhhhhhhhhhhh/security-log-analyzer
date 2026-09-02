@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# 分析报告为运行生成物，不进版本库
+*report.json

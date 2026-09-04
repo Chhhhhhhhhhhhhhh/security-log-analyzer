@@ -27,26 +27,68 @@ SEVERITY_ORDER = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
 
 CAP = 10
 
-def parse_simple_log(line):
+def parse_nginx_log(line):
     """
-    解析简单的日志格式：IP - METHOD URL
+    解析简单的日志格式：IP - METHOD URL HTTP/1.1 STATUS SIZE
     """
-    parts = line.split()
-    if len(parts) < 4:
-        return None
+    parts = line.split('"')
     
-    ip = parts[0]
-    
-    if not is_valid_ip(ip):
+
+    if len(parts) != 7:
         return None
 
-    method = parts[2]
-    url = " ".join(parts[3:])
+    first_part = parts[0].strip()
+
+    request_part = parts[1].strip()
+
+    first_parts = first_part.split()
+
+
+    if len(first_parts) != 5:
+        return None
+
+    ip = first_parts[0]
+
+    if not is_valid_ip(ip):
+        return None
+    
+    timestamp = " ".join(first_parts[3:5])
+
+
+    request_parts = request_part.split()
+
+
+    if len(request_parts) < 3:
+        return None
+
+    method = request_parts[0]
+
+    url = " ".join(request_parts[1:-1])
+
+    protocol = request_parts[-1]
+    
+    status_size = parts[2].split()
+    if len(status_size) != 2:
+        return None
+   
+    status = int(status_size[0])
+
+    size = int(status_size[1]) if status_size[1] != '-' else 0
+
+    referer = parts[3]
+
+    user_agent = parts[5]
 
     return {
         "ip": ip,
+        "timestamp": timestamp,
         "method": method,
-        "url": url
+        "url": url,
+        "protocol": protocol,
+        "status": status,
+        "size": size,
+        "referer": referer,
+        "user_agent": user_agent
     }
 
 def is_valid_ip(ip):
@@ -235,7 +277,7 @@ def generate_report(alerts, ip_count, threshold, profiles):
     report["high_volume_ips"].sort(key=lambda x: x["count"], reverse=True)     #按访问次数排序，从高到低
     
     for ip, p in profiles.items():
-        if p["attack_count"] > 0:
+        if p["total_risk_score"] > 0:
             report["suspicious_ips"].append({
                 "ip": ip,
                 "total_risk_score": p["total_risk_score"]
@@ -253,9 +295,9 @@ def analyze_log(log_file):
     alerts = []              #定义一个空列表，用于存储所有告警信息
     with open(log_file, 'r') as f:     #打开日志文件，只读模式
         for line in f:
-            log_data = parse_simple_log(line)
+            log_data = parse_nginx_log(line)
 
-            if  log_data is None:   #如果归一化失败，跳过该行
+            if  log_data is None:   #如果日志解析失败，跳过该行
                 continue
             
             log_data = normalize_log(log_data)

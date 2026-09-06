@@ -3,6 +3,7 @@ from collections import Counter
 import json
 import argparse
 import ipaddress
+from datetime import datetime
 
 patterns = {                             #定义一个字典，键为特征，值为等级和类型信息
     "union select": {
@@ -26,6 +27,8 @@ patterns = {                             #定义一个字典，键为特征，�
 SEVERITY_ORDER = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
 
 CAP = 10
+
+SCAN_THRESHOLD = 3
 
 def parse_nginx_log(line):
     """
@@ -118,6 +121,7 @@ def detect_attacks(log_data, line):
     """
     ip = log_data["ip"]
     url = log_data["url"]
+    status = log_data["status"]
 
     alerts = []
     
@@ -129,6 +133,8 @@ def detect_attacks(log_data, line):
                 "level": level["severity"],
                 "type": level["type"],
                 "url": url,
+                "status": status,
+                "timestamp": log_data["timestamp"],
                 "line": line
             }
             alerts.append(alert)
@@ -154,7 +160,7 @@ def count_attacks_by_ip(alerts):
     
     return attack_count
 
-def build_ip_behavior(ip_count, attack_count):
+def build_ip_behavior(ip_count, attack_count, alerts):
     """
     构建IP地址的攻击行为，返回一个字典。
     """
@@ -164,10 +170,32 @@ def build_ip_behavior(ip_count, attack_count):
     for ip, request_count in ip_count.items():
         attack = attack_count.get(ip, 0)
 
+        ip_alerts =[
+            alert for alert in alerts if alert["ip"] == ip
+        ]
+
+        if ip_alerts:
+            times = [datetime.strptime(
+                alert["timestamp"],
+                "[%d/%b/%Y:%H:%M:%S %z]"
+            )
+            for alert in ip_alerts]
+
+            attack_time_span = (max(times)-min(times)).total_seconds()
+        else:
+            attack_time_span = 0
+
+        if attack_time_span > 0:
+            attack_frequency = attack / max(attack_time_span, 1)
+        else:
+            attack_frequency = 0
+
         behavior[ip] = {
             "request_count": request_count,
             "attack_count": attack,
-            "attack_rate": attack / request_count 
+            "attack_rate": attack / request_count,
+            "attack_time_span": attack_time_span,
+            "attack_frequency": attack_frequency
         }
 
     return behavior
@@ -202,6 +230,8 @@ def build_ip_profile(behavior, attack_types, scores):
             "attack_rate": data["attack_rate"],
             "attack_types": list(types),
             "attack_type_count": len(types),
+            "attack_time_span": data["attack_time_span"],
+            "attack_frequency": data["attack_frequency"],
             "max_severity": s.get("max_severity"),
             "total_risk_score": s.get("total_risk_score", 0)
         }
@@ -237,14 +267,16 @@ def build_ip_scores(alerts):
     
     return scores
 
-def generate_report(alerts, ip_count, threshold, profiles):
+def generate_report(alerts, ip_count, threshold, profiles, not_found):
     """
     生成攻击报告，包括可疑IP、攻击特征、攻击次数等信息。
     """
     report = {
+        "alerts": alerts,
         "suspicious_ips": [],
         "attacks": [],
         "high_volume_ips": [],
+        "scan_suspects": [],
         "ip_profiles": profiles
     }                           #定义一个空字典，用于存储所有攻击信息
 
@@ -285,6 +317,14 @@ def generate_report(alerts, ip_count, threshold, profiles):
 
     report["suspicious_ips"].sort(key=lambda x: x["total_risk_score"], reverse=True)     #按风险分数排序，从高到低
 
+    for ip, count404 in not_found.items():
+        if count404 >= SCAN_THRESHOLD:
+            report["scan_suspects"].append({
+                "ip": ip,
+                "not_found_404": count404
+            })
+    report["scan_suspects"].sort(key=lambda x: x["not_found_404"], reverse=True)      #按404错误次数排序，从高到低
+    
     return report
     
 def analyze_log(log_file):
@@ -293,11 +333,14 @@ def analyze_log(log_file):
     """
     ips = []     #定义一个空列表，用于存储所有IP地址
     alerts = []              #定义一个空列表，用于存储所有告警信息
+    not_found = Counter()
+
     with open(log_file, 'r') as f:     #打开日志文件，只读模式
         for line in f:
             log_data = parse_nginx_log(line)
 
-            if  log_data is None:   #如果日志解析失败，跳过该行
+            if  log_data is None:                        #如果日志解析失败，跳过该行
+                print(f"解析日志失败: {line.strip()}")
                 continue
             
             log_data = normalize_log(log_data)
@@ -305,11 +348,13 @@ def analyze_log(log_file):
             ip = log_data["ip"]
 
             ips.append(ip)
+            if log_data["status"] == 404:
+                not_found[ip] += 1
             new_alerts = detect_attacks(log_data, line)
 
             alerts.extend(new_alerts)
 
-    return ips, alerts
+    return ips, alerts, not_found
 
 def main():
     """
@@ -344,12 +389,13 @@ def main():
 
 
     try:
-        ips, alerts = analyze_log(args.log)
+        ips, alerts, not_found = analyze_log(args.log)
+
         ip_count = count_ips(ips) 
 
         attack_count = count_attacks_by_ip(alerts)
 
-        behavior = build_ip_behavior(ip_count, attack_count)
+        behavior = build_ip_behavior(ip_count, attack_count, alerts)
 
         attack_types = get_attack_types_by_ip(alerts)
 
@@ -358,7 +404,7 @@ def main():
         profiles = build_ip_profile(behavior, attack_types, scores)
         
         print("===== 开始生成报告 =====")
-        report = generate_report(alerts, ip_count, args.threshold, profiles)
+        report = generate_report(alerts, ip_count, args.threshold, profiles, not_found)
 
         with open(args.output, "w", encoding="utf-8") as f:
             json.dump(report, f, ensure_ascii=False, indent=4)

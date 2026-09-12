@@ -215,11 +215,10 @@ def build_ip_behavior(ip_count, attack_count, alerts):
         ]
 
         if ip_alerts:
-            times = [datetime.strptime(
-                alert["timestamp"],
-                "[%d/%b/%Y:%H:%M:%S %z]"
-            )
-            for alert in ip_alerts]
+            times = []
+            for alert in ip_alerts:
+                times.append(datetime.strptime(alert["timestamp"],"[%d/%b/%Y:%H:%M:%S %z]"))
+                times.append(datetime.strptime(alert["last_seen"],"[%d/%b/%Y:%H:%M:%S %z]"))
 
             attack_time_span = (max(times)-min(times)).total_seconds()
         else:
@@ -409,12 +408,14 @@ def analyze_log(log_file):
                         "url": alert["url"],
                         "status": alert["status"],
                         "timestamp": alert["timestamp"],
+                        "last_seen": alert["timestamp"],
                         "line": alert["line"],
                         "count": 1
                     }
                 else:
                     # 已存在，只增加次数
                     alert_dict[key]["count"] += 1
+                    alert_dict[key]["last_seen"] = alert["timestamp"]
     # 把字典转回列表，给后面的函数用
     alerts = list(alert_dict.values())
 

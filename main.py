@@ -22,7 +22,47 @@ patterns = {                             #定义一个字典，键为特征，�
         "severity": "MEDIUM",
         "score": 5,
         "type": "XSS"
-    }
+    },
+    "'or 1=1": {
+        "severity": "HIGH",
+        "score": 10,
+        "type": "SQL_Injection"
+    },
+    "or 1=1": {
+        "severity": "HIGH",
+        "score": 10,
+        "type": "SQL_Injection"
+    },
+    "union all select": {
+        "severity": "HIGH",
+        "score": 10,
+        "type": "SQL_Injection"
+    },
+    "information_schema": {
+        "severity": "HIGH",
+        "score": 10,
+        "type": "SQL_Injection"
+    },
+    "javascript:": {
+        "severity": "MEDIUM",
+        "score": 5,
+        "type": "XSS"
+    },
+    "onerror=": {
+        "severity": "MEDIUM",
+        "score": 5,
+        "type": "XSS"
+    },
+    "onload=": {
+        "severity": "MEDIUM",
+        "score": 5,
+        "type": "XSS"
+    },
+    "../": {
+    "severity": "HIGH",
+    "score": 10,
+    "type": "Path_Traversal"
+}
 }
 SEVERITY_ORDER = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
 
@@ -151,12 +191,12 @@ def count_ips(ips):
 
 def count_attacks_by_ip(alerts):
     """
-    统计所有IP地址的攻击次数，返回一个字典。
+    统计所有IP地址的攻击次数（使用聚合后的 count）。
     """
-    attack_count = Counter(
-        alert['ip']
-        for alert in alerts
-    )
+    attack_count = Counter()
+
+    for alert in alerts:
+        attack_count[alert["ip"]] += alert.get("count", 1)
     
     return attack_count
 
@@ -240,16 +280,15 @@ def build_ip_profile(behavior, attack_types, scores):
 
 def build_ip_scores(alerts):
     """
-    计算每个IP的封顶风险总分和最高严重级别。
+    计算每个IP的封顶风险总分和最高严重级别（使用聚合后的 count）。
     """
-    alert_count = Counter(
-        (alert['ip'],alert['pattern'])
-        for alert in alerts
-    )
-
     scores = {}
 
-    for (ip, pattern), count in alert_count.items():
+    for alert in alerts:
+        ip = alert["ip"]
+        pattern = alert["pattern"]
+        count = alert.get("count", 1)
+
         rule = patterns[pattern]
         contribution = rule["score"] * min(count, CAP)
 
@@ -258,7 +297,7 @@ def build_ip_scores(alerts):
                 "total_risk_score": 0,
                 "max_severity": None
             }
-        
+
         scores[ip]["total_risk_score"] += contribution
 
         current = scores[ip]["max_severity"]
@@ -280,23 +319,26 @@ def generate_report(alerts, ip_count, threshold, profiles, not_found):
         "ip_profiles": profiles
     }                           #定义一个空字典，用于存储所有攻击信息
 
+    # 按 IP + pattern 聚合真实次数
+    attack_stats = {}
+    for alert in alerts:
+        key = (alert["ip"], alert["pattern"])
+        count = alert.get("count", 1)
 
-    alert_count = Counter(              #统计所有攻击特征的出现次数
-        (alert['ip'],alert['pattern'])
-        for alert in alerts
-    )
+        if key not in attack_stats:
+            attack_stats[key] = {
+                "ip": alert["ip"],
+                "pattern": alert["pattern"],
+                "level": patterns[alert["pattern"]]["severity"],
+                "type": patterns[alert["pattern"]]["type"],
+                "count": 0
+            }
+        attack_stats[key]["count"] += count
 
-    for key, count in alert_count.items():     #遍历攻击键值对，打印攻击信息
-        ip, pattern = key
-        
-        report["attacks"].append({
-            "ip": ip,
-            "pattern": pattern,
-            "level": patterns[pattern]["severity"],
-            "type": patterns[pattern]["type"],
-            "count": count,
-            "risk_score": min(count, CAP) * patterns[pattern]["score"]
-        })
+    for item in attack_stats.values():
+        item["risk_score"] = min(item["count"], CAP) * patterns[item["pattern"]]["score"]
+        report["attacks"].append(item)
+
     report["attacks"].sort(key=lambda x: x["risk_score"], reverse=True)     #按风险分数排序，从高到低
 
     for ip, count in ip_count.items():
@@ -332,7 +374,7 @@ def analyze_log(log_file):
     分析日志文件，返回所有IP地址和匹配的攻击特征。
     """
     ips = []     #定义一个空列表，用于存储所有IP地址
-    alerts = []              #定义一个空列表，用于存储所有告警信息
+    alert_dict = {}             # 用来按 (ip, pattern, status) 聚合
     not_found = Counter()
 
     with open(log_file, 'r') as f:     #打开日志文件，只读模式
@@ -346,13 +388,35 @@ def analyze_log(log_file):
             log_data = normalize_log(log_data)
             
             ip = log_data["ip"]
-
             ips.append(ip)
+
             if log_data["status"] == 404:
                 not_found[ip] += 1
+
             new_alerts = detect_attacks(log_data, line)
 
-            alerts.extend(new_alerts)
+            for alert in new_alerts:
+                # 用 IP + pattern + status 作为唯一键
+                key = (alert["ip"], alert["pattern"], alert["status"])
+
+                if key not in alert_dict:
+                    # 第一次出现，保存完整信息，并初始化计数
+                    alert_dict[key] = {
+                        "ip": alert["ip"],
+                        "pattern": alert["pattern"],
+                        "level": alert["level"],
+                        "type": alert["type"],
+                        "url": alert["url"],
+                        "status": alert["status"],
+                        "timestamp": alert["timestamp"],
+                        "line": alert["line"],
+                        "count": 1
+                    }
+                else:
+                    # 已存在，只增加次数
+                    alert_dict[key]["count"] += 1
+    # 把字典转回列表，给后面的函数用
+    alerts = list(alert_dict.values())
 
     return ips, alerts, not_found
 

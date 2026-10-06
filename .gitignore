@@ -217,8 +217,17 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# 分析报告为运行生成物，不进版本库
-*report.json
+# 运行生成物，不进版本库
+report.json
+ai_result.json
+security_report.md
+temp_uploaded.log
+test_lastseen.log
+test_ls_report.json
+
+# 保留测试固件
+!test_report.json
 
 # 本地测试脚本，不进版本库
 test.py
+

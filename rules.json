@@ -1,0 +1,87 @@
+{
+  "union select": {
+    "severity": "HIGH",
+    "score": 10,
+    "type": "SQL_Injection"
+  },
+  "' or '": {
+    "severity": "HIGH",
+    "score": 10,
+    "type": "SQL_Injection"
+  },
+  "<script": {
+    "severity": "MEDIUM",
+    "score": 5,
+    "type": "XSS"
+  },
+  "'or 1=1": {
+    "severity": "HIGH",
+    "score": 10,
+    "type": "SQL_Injection"
+  },
+  "or 1=1": {
+    "severity": "HIGH",
+    "score": 10,
+    "type": "SQL_Injection"
+  },
+  "union all select": {
+    "severity": "HIGH",
+    "score": 10,
+    "type": "SQL_Injection"
+  },
+  "information_schema": {
+    "severity": "HIGH",
+    "score": 10,
+    "type": "SQL_Injection"
+  },
+  "javascript:": {
+    "severity": "MEDIUM",
+    "score": 5,
+    "type": "XSS"
+  },
+  "onerror=": {
+    "severity": "MEDIUM",
+    "score": 5,
+    "type": "XSS"
+  },
+  "onload=": {
+    "severity": "MEDIUM",
+    "score": 5,
+    "type": "XSS"
+  },
+  "../": {
+    "severity": "HIGH",
+    "score": 10,
+    "type": "Path_Traversal"
+  },
+  "sqlmap": {
+    "severity": "HIGH",
+    "score": 10,
+    "type": "Scanner_Tool"
+  },
+  "nikto": {
+    "severity": "HIGH",
+    "score": 10,
+    "type": "Scanner_Tool"
+  },
+  "dirsearch": {
+    "severity": "HIGH",
+    "score": 5,
+    "type": "Scanner_Tool"
+  },
+  "nmap": {
+    "severity": "HIGH",
+    "score": 10,
+    "type": "Scanner_Tool"
+  },
+  "python-requests": {
+    "severity": "LOW",
+    "score": 2,
+    "type": "Script_Client"
+  },
+  "curl/": {
+    "severity": "LOW",
+    "score": 2,
+    "type": "Script_Client"
+  }
+}

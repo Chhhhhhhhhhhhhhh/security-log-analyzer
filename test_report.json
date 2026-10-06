@@ -1,0 +1,167 @@
+{
+  "alerts": [
+    {
+      "ip": "192.168.153.133",
+      "pattern": "' or '",
+      "level": "HIGH",
+      "type": "SQL_Injection",
+      "url": "/vulnerabilities/sqli/?id=1' OR '1'='1",
+      "status": 404,
+      "timestamp": "[12/Sep/2026:15:05:19 +0800]",
+      "last_seen": "[12/Sep/2026:15:05:19 +0800]",
+      "line": "192.168.153.133 - - [12/Sep/2026:15:05:19 +0800] \"GET /vulnerabilities/sqli/?id=1' OR '1'='1 HTTP/1.1\" 404 162 \"-\" \"curl/8.21.0\"\n",
+      "count": 1
+    },
+    {
+      "ip": "192.168.153.133",
+      "pattern": "union select",
+      "level": "HIGH",
+      "type": "SQL_Injection",
+      "url": "/vulnerabilities/sqli/?id=1 UNION SELECT 1,2",
+      "status": 404,
+      "timestamp": "[12/Sep/2026:15:05:40 +0800]",
+      "last_seen": "[12/Sep/2026:15:05:40 +0800]",
+      "line": "192.168.153.133 - - [12/Sep/2026:15:05:40 +0800] \"GET /vulnerabilities/sqli/?id=1 UNION SELECT 1,2 HTTP/1.1\" 404 162 \"-\" \"curl/8.21.0\"\n",
+      "count": 1
+    },
+    {
+      "ip": "192.168.153.133",
+      "pattern": "<script",
+      "level": "MEDIUM",
+      "type": "XSS",
+      "url": "/vulnerabilities/xss_r/?name=<script>alert(1)</script>",
+      "status": 404,
+      "timestamp": "[12/Sep/2026:15:07:08 +0800]",
+      "last_seen": "[12/Sep/2026:15:07:08 +0800]",
+      "line": "192.168.153.133 - - [12/Sep/2026:15:07:08 +0800] \"GET /vulnerabilities/xss_r/?name=<script>alert(1)</script> HTTP/1.1\" 404 162 \"-\" \"curl/8.21.0\"\n",
+      "count": 1
+    },
+    {
+      "ip": "192.168.153.133",
+      "pattern": "<script",
+      "level": "MEDIUM",
+      "type": "XSS",
+      "url": "/vulnerabilities/xss_r/?name=<script>alert(1)</script>",
+      "status": 302,
+      "timestamp": "[12/Sep/2026:15:08:24 +0800]",
+      "last_seen": "[12/Sep/2026:15:08:45 +0800]",
+      "line": "192.168.153.133 - - [12/Sep/2026:15:08:24 +0800] \"GET /vulnerabilities/xss_r/?name=<script>alert(1)</script> HTTP/1.1\" 302 5 \"-\" \"curl/8.21.0\"\n",
+      "count": 2
+    },
+    {
+      "ip": "192.168.153.133",
+      "pattern": "union select",
+      "level": "HIGH",
+      "type": "SQL_Injection",
+      "url": "/vulnerabilities/sqli/?id=1 UNION SELECT 1,2",
+      "status": 302,
+      "timestamp": "[12/Sep/2026:15:09:12 +0800]",
+      "last_seen": "[12/Sep/2026:15:13:45 +0800]",
+      "line": "192.168.153.133 - - [12/Sep/2026:15:09:12 +0800] \"GET /vulnerabilities/sqli/?id=1 UNION SELECT 1,2 HTTP/1.1\" 302 5 \"-\" \"curl/8.21.0\"\n",
+      "count": 3
+    },
+    {
+      "ip": "192.168.153.132",
+      "pattern": "<script",
+      "level": "MEDIUM",
+      "type": "XSS",
+      "url": "/vulnerabilities/xss_r/?name=<script>alert(1)</script>",
+      "status": 200,
+      "timestamp": "[12/Sep/2026:15:09:46 +0800]",
+      "last_seen": "[12/Sep/2026:15:09:46 +0800]",
+      "line": "192.168.153.132 - - [12/Sep/2026:15:09:46 +0800] \"GET /vulnerabilities/xss_r/?name=<script>alert(1)</script> HTTP/1.1\" 200 990 \"-\" \"Mozilla/5.0\"\n",
+      "count": 1
+    },
+    {
+      "ip": "192.168.153.133",
+      "pattern": "union select",
+      "level": "HIGH",
+      "type": "SQL_Injection",
+      "url": "/vulnerabilities/sqli/?id=1 UNION SELECT 1,2",
+      "status": 200,
+      "timestamp": "[12/Sep/2026:15:15:31 +0800]",
+      "last_seen": "[12/Sep/2026:15:15:31 +0800]",
+      "line": "192.168.153.133 - - [12/Sep/2026:15:15:31 +0800] \"GET /vulnerabilities/sqli/?id=1 UNION SELECT 1,2 HTTP/1.1\" 200 447 \"-\" \"Mozilla/5.0\"\n",
+      "count": 1
+    },
+    {
+      "ip": "192.168.153.133",
+      "pattern": "../",
+      "level": "HIGH",
+      "type": "Path_Traversal",
+      "url": "/vulnerabilities/fi/?page=../../../../etc/passwd",
+      "status": 200,
+      "timestamp": "[12/Sep/2026:15:18:20 +0800]",
+      "last_seen": "[12/Sep/2026:15:18:20 +0800]",
+      "line": "192.168.153.133 - - [12/Sep/2026:15:18:20 +0800] \"GET /vulnerabilities/fi/?page=../../../../etc/passwd HTTP/1.1\" 200 447 \"-\" \"Mozilla/5.0\"\n",
+      "count": 1
+    },
+    {
+      "ip": "192.168.153.1",
+      "pattern": "../",
+      "level": "HIGH",
+      "type": "Path_Traversal",
+      "url": "/vulnerabilities/fi/?page=../../../../etc/passwd",
+      "status": 404,
+      "timestamp": "[12/Sep/2026:15:49:43 +0800]",
+      "last_seen": "[12/Sep/2026:15:49:43 +0800]",
+      "line": "192.168.153.1 - - [12/Sep/2026:15:49:43 +0800] \"GET /vulnerabilities/fi/?page=../../../../etc/passwd HTTP/1.1\" 404 162 \"-\" \"Mozilla/5.0\"\n",
+      "count": 1
+    },
+    {
+      "ip": "192.168.153.1",
+      "pattern": "../",
+      "level": "HIGH",
+      "type": "Path_Traversal",
+      "url": "/vulnerabilities/fi/?page=../../../../etc/passwd",
+      "status": 302,
+      "timestamp": "[12/Sep/2026:15:49:57 +0800]",
+      "last_seen": "[12/Sep/2026:15:49:57 +0800]",
+      "line": "192.168.153.1 - - [12/Sep/2026:15:49:57 +0800] \"GET /vulnerabilities/fi/?page=../../../../etc/passwd HTTP/1.1\" 302 5 \"-\" \"Mozilla/5.0\"\n",
+      "count": 1
+    }
+  ],
+  "ip_profiles": {
+    "192.168.153.133": {
+      "request_count": 49,
+      "attack_count": 10,
+      "attack_rate": 0.20408163265306123,
+      "attack_types": [
+        "Path_Traversal",
+        "XSS",
+        "SQL_Injection"
+      ],
+      "attack_type_count": 3,
+      "attack_time_span": 781.0,
+      "attack_frequency": 0.012804097311139565,
+      "max_severity": "HIGH",
+      "total_risk_score": 85
+    },
+    "192.168.153.132": {
+      "request_count": 14,
+      "attack_count": 1,
+      "attack_rate": 0.07142857142857142,
+      "attack_types": [
+        "XSS"
+      ],
+      "attack_type_count": 1,
+      "attack_time_span": 0.0,
+      "attack_frequency": 0,
+      "max_severity": "MEDIUM",
+      "total_risk_score": 5
+    },
+    "192.168.153.1": {
+      "request_count": 16,
+      "attack_count": 2,
+      "attack_rate": 0.125,
+      "attack_types": [
+        "Path_Traversal"
+      ],
+      "attack_type_count": 1,
+      "attack_time_span": 14.0,
+      "attack_frequency": 0.14285714285714285,
+      "max_severity": "HIGH",
+      "total_risk_score": 20
+    }
+  }
+}
